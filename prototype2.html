@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flexible Pomodoro</title>
+    <style>
+        :root {
+            --bg-work: #0f0f0f;
+            --text-main: #ffffff;
+            --accent: #555;
+            --bg-break: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-work);
+            color: var(--text-main);
+            transition: background 0.8s ease;
+            overflow: hidden;
+        }
+
+        /* Settings Bar */
+        .settings {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 25px;
+            border-radius: 30px;
+            z-index: 20;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+
+        input[type="number"] {
+            background: transparent;
+            border: 1px solid #444;
+            color: white;
+            width: 45px;
+            padding: 4px;
+            border-radius: 4px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* Main Display */
+        #status {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+            color: #aaa;
+            z-index: 10;
+        }
+
+        #timer {
+            font-size: 10rem;
+            font-weight: 200;
+            margin: 0;
+            font-variant-numeric: tabular-nums;
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        button {
+            background: transparent;
+            color: white;
+            border: 1px solid #444;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            border-color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* Break Mode Stimulation */
+        body.break-mode {
+            background: var(--bg-break);
+            color: #fff;
+        }
+        body.break-mode #status, body.break-mode .setting-group { color: #fff; }
+        body.break-mode input { border-color: #fff; }
+
+        .particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 1;
+        }
+        body.break-mode .particles { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="settings">
+        <div class="setting-group">
+            <label>Focus</label>
+            <input type="number" id="work-input" value="25" min="1" max="60">
+        </div>
+        <div class="setting-group">
+            <label>Break</label>
+            <input type="number" id="break-input" value="5" min="1" max="60">
+        </div>
+    </div>
+
+    <div id="status">Focus</div>
+    <div id="timer">25:00</div>
+
+    <div class="controls">
+        <button id="start-btn">Start</button>
+        <button id="reset-btn">Reset</button>
+    </div>
+
+    <canvas class="particles" id="particles"></canvas>
+
+    <script>
+        let audioCtx;
+        let timeLeft;
+        let isRunning = false;
+        let isBreak = false;
+        let timerInterval;
+
+        const timerDisplay = document.getElementById('timer');
+        const statusDisplay = document.getElementById('status');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const workInput = document.getElementById('work-input');
+        const breakInput = document.getElementById('break-input');
+
+        // Set initial time based on input
+        timeLeft = workInput.value * 60;
+
+        function updateDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function playSound(high) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+           
+            osc.type = high ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(high ? 880 : 440, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+           
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function toggleTimer() {
+            if (!isRunning) {
+                // If starting fresh or resuming
+                isRunning = true;
+                startBtn.textContent = 'Pause';
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft < 0) {
+                        isBreak = !isBreak;
+                        timeLeft = (isBreak ? breakInput.value : workInput.value) * 60;
+                        statusDisplay.textContent = isBreak ? "Break" : "Focus";
+                        document.body.classList.toggle('break-mode', isBreak);
+                        if(isBreak) startParticles(); else stopParticles();
+                        playSound(isBreak);
+                    }
+                    updateDisplay();
+                }, 1000);
+            } else {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.textContent = 'Resume';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isBreak = false;
+            timeLeft = workInput.value * 60;
+            statusDisplay.textContent = "Focus";
+            startBtn.textContent = "Start";
+            document.body.classList.remove('break-mode');
+            stopParticles();
+            updateDisplay();
+        }
+
+        // Listen for input changes to update timer immediately if not running
+        [workInput, breakInput].forEach(input => {
+            input.addEventListener('change', () => {
+                if (!isRunning) resetTimer();
+            });
+        });
+
+        startBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Particle System
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let parts = [];
+        let anim;
+
+        function startParticles() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            parts = Array.from({length: 50}, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vX: (Math.random() - 0.5) * 4,
+                vY: (Math.random() - 0.5) * 4,
+                r: Math.random() * 5 + 2
+            }));
+            (function draw() {
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                ctx.fillStyle = "white";
+                parts.forEach(p => {
+                    p.x += p.vX; p.y += p.vY;
+                    if(p.x<0 || p.x>canvas.width) p.vX*=-1;
+                    if(p.y<0 || p.y>canvas.height) p.vY*=-1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                anim = requestAnimationFrame(draw);
+            })();
+        }
+        function stopParticles() { cancelAnimationFrame(anim); }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
