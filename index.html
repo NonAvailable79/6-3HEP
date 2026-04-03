@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meditative Toys</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #111;
+            color: white;
+            overflow: hidden;
+        }
+
+        #menu {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%); /*squishy*/
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 10px;
+            background: #333;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <button onclick="setToy('bubbles')">Bubbles</button>
+        <button onclick="setToy('sand')">Sand</button>
+        <button onclick="setToy('waves')">Waves</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d'); // the EXISTENCE of it
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        let currentToy = 'bubbles';
+
+        function setToy(toy) {
+            currentToy = toy;
+            objects = [];
+        }
+
+        let objects = [];
+
+        // --- BUBBLES ---
+        canvas.addEventListener('click', (e) => {
+            if (currentToy === 'bubbles') {
+                objects.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    size: Math.random() * 20 + 10,
+                    speed: Math.random() * 1 + 0.5
+                });
+            }
+        });
+
+        // --- SAND DRAW ---
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', () => {
+            drawing = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (currentToy === 'sand' && drawing) {
+                objects.push({
+                    x: e.clientX,
+                    y: e.clientY
+                });
+            }
+        });
+
+        // --- WAVES --- wavewave
+        let waveOffset = 0; //the globalllllll
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentToy === 'bubbles') {
+                objects.forEach((b, i) => {
+                    b.y -= b.speed;
+
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2); //drawdrawdrawdraw
+                    ctx.strokeStyle = 'lightblue';
+                    ctx.stroke();
+
+                    if (b.y < -50) {
+                        objects.splice(i, 1);
+                    }
+                });
+            }
+
+            if (currentToy === 'sand') {
+                objects.forEach((p) => {
+                    ctx.fillStyle = 'tan';
+                    ctx.fillRect(p.x, p.y, 2, 2);
+                });
+            }
+
+            if (currentToy === 'waves') {
+                waveOffset += 0.05;
+
+                ctx.beginPath();
+
+                for (let x = 0; x < canvas.width; x++) {
+                    let y = canvas.height / 2 + Math.sin(x * 0.01 + waveOffset) * 50;
+                    ctx.lineTo(x, y);
+                }
+
+                ctx.strokeStyle = 'cyan';
+                ctx.stroke();
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+
+</body>
+</html>
