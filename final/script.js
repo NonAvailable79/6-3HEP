@@ -81,7 +81,7 @@ resize();
 // squishy: { ... }
 const toys = {
     // example:
-    // bubbles: {
+    bubbles: {
     //     update() {},
     //     draw() {},
     //     click(e) {}
