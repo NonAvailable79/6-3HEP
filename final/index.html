@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guided Pomodoro + Toys</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="settings"> 
+            <div class="setting-group"> 
+                <label>Focus</label> 
+                <input type="number" id="work-input" value="25" min="1" max="60"> 
+            </div> 
+            <div class="setting-group"> 
+                <label>Break</label> 
+                <input type="number" id="break-input" value="5" min="1" max="60"> 
+            </div> 
+        </div>
+        <button id="start-btn">Start</button>
+        <button id="reset-btn">Reset</button>
+        <div id="timer">25:00</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script href="script.js"></script>
+
+</body>
+</html>
