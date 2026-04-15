@@ -76,16 +76,13 @@ resize();
 // STEP 4: TOY SYSTEM
 // =========================
 // TODO:
-// Create objects like:
-// bubbles: { update(), draw(), click() }
-// squishy: { ... }
+// store the toy behaviour in dormant objects (why not)
 const toys = {
-    // example:
     bubbles: {
-    //     update() {},
-    //     draw() {},
-    //     click(e) {}
-    // }
+        update() {},
+        draw() {},
+        click(e) {}
+    }
 };
 
 
@@ -111,10 +108,11 @@ function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // TODO:
-    // - Update current toy
-    // - Draw current toy
+    // - Update current toy (only if it's break)
+    // - Draw current toy (only if it's break)
+    // check what is available to you
 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop); // ask the page to update this
 }
 
 loop();
@@ -146,8 +144,6 @@ loop();
 // - playWarning()
 
 
-// =========================
-// STEP 10: HOOK BUTTONS
-// =========================
+// make the buttons trigger stuff
 document.getElementById('start').onclick = startTimer;
 document.getElementById('reset').onclick = resetTimer;
