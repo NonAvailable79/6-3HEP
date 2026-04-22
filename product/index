@@ -72,6 +72,10 @@
 
     <div id="status">Focus</div>
     <div id="timer">25:00</div>
+    <div id="instructions"><i>click to play with toys<br> 
+        press reset to change timing <br> 
+        refresh to reset everything</i>
+    </div>
 </div>
 
 <canvas id="canvas"></canvas>
