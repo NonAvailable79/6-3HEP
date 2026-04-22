@@ -9,6 +9,8 @@ const state = {
 const focusInput = document.getElementById("focusInput");
 const breakInput = document.getElementById("breakInput");
 const timerMode = document.getElementById("timerMode");
+const startBtn = document.getElementById("start");
+const resetBtn = document.getElementById("reset");
 
 let interval;
 
@@ -24,16 +26,17 @@ function startTimer() {
     if (state.isRunning) {
         clearInterval(interval);
         state.isRunning = false;
+        startBtn.innerHTML = "Start"
         return;
     }
 
-    state.isRunning = true;
+    state.isRunning    = true;
+    startBtn.innerHTML = "Pause"
 
     interval = setInterval(() => {
         state.timeLeft--;
 
-        if (state.timeLeft <= 0) switchMode();
-        if (state.timeLeft === 10) beep(600);
+        if (state.timeLeft <= 1) switchMode();
 
         updateDisplay();
     }, 1000);
@@ -43,8 +46,10 @@ function resetTimer() {
     clearInterval(interval);
     state.isRunning = false;
     state.mode = "focus";
+
     state.timeLeft = focusInput.value * 60;
     document.body.classList.remove("break");
+    timerMode.innerHTML = "Focus";
     updateDisplay();
 }
 
@@ -53,26 +58,46 @@ function switchMode() {
         state.mode = "break";
         state.timeLeft = breakInput.value * 60;
         document.body.classList.add("break");
+        timerMode.innerHTML = "Break";
+        playSound(1)
         state.sessions++;
 
-        if (state.sessions >= 2) state.currentToy = "bubbles";
-    } else {
+        if (state.sessions >= 5) {
+            state.currentToy = "sand";
+        }
+        else if (state.sessions >= 2) {
+            state.currentToy = "bubbles";
+        }
+        else {
+            state.currentToy = "waves"
+        }
+    }
+    else {
         state.mode = "focus";
         state.timeLeft = focusInput.value * 60;
         document.body.classList.remove("break");
+        timerMode.innerHTML = "Focus";
+        playSound(0)
         state.currentToy = "squishy";
     }
 }
 
 let audioCtx;
-function beep(freq) {
+
+function playSound(high) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let o = audioCtx.createOscillator();
-    let g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    o.frequency.value = freq;
-    g.gain.value = 0.1;
-    o.start(); o.stop(audioCtx.currentTime + 0.2);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = high ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(high ? 880 : 440, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
 }
 
 /* CANVAS */
@@ -90,7 +115,7 @@ resize();
 let bubbles = [];
 let sand = [];
 let waveOffset = 0;
-let squishy = { x: 300, y: 300, size: 60, target: 60 };
+let squishy = { x: 300, y: 300, size: 120, target: 60 };
 
 const toys = {
 
