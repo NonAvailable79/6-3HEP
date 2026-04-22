@@ -1,9 +1,6 @@
 # 6-3HEP
-School project.
-I'm making a website for people with special needs.
+I'm doing a school project.
 
-# 6-7
-
-It's the real thing minglen.
-
-UnSiGhTrEaDaBlE
+## What's included?
+* Prototype 1 — sensory toys
+* Prototype 2 — pomodoro

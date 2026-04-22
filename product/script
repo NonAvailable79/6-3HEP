@@ -111,6 +111,13 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
+let mouse = { x: 0, y: 0 };
+
+canvas.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
 /* TOYS */
 let bubbles = [];
 let sand = [];
@@ -169,11 +176,23 @@ const toys = {
 
     squishy: {
         update() {
-            squishy.size += (squishy.target - squishy.size) * 0.1;
+            // smooth size change
+            squishy.size += (squishy.target - squishy.size) * 0.2;
+
+            // cursor pull (only in focus mode)
+            if (state.mode === "focus") {
+                let dx = mouse.x - squishy.x;
+                let dy = mouse.y - squishy.y;
+
+                // distance-based pull strength
+                squishy.x += dx * 0.05;
+                squishy.y += dy * 0.05;
+            }
         },
         draw() {
             ctx.beginPath();
             ctx.arc(squishy.x, squishy.y, squishy.size, 0, Math.PI * 2);
+            ctx.fillStyle = "#aaa";
             ctx.fill();
         },
         click(e) {
