@@ -1,0 +1,219 @@
+const state = {
+    mode: "focus",
+    isRunning: false,
+    timeLeft: 25 * 60,
+    sessions: 0,
+    currentToy: "squishy"
+};
+
+const focusInput = document.getElementById("focusInput");
+const breakInput = document.getElementById("breakInput");
+const timerMode = document.getElementById("timerMode");
+
+let interval;
+
+function updateDisplay() {
+    let m = Math.floor(state.timeLeft / 60);
+    let s = state.timeLeft % 60;
+    timer.textContent =
+        m.toString().padStart(2, "0") + ":" +
+        s.toString().padStart(2, "0");
+}
+
+function startTimer() {
+    if (state.isRunning) {
+        clearInterval(interval);
+        state.isRunning = false;
+        return;
+    }
+
+    state.isRunning = true;
+
+    interval = setInterval(() => {
+        state.timeLeft--;
+
+        if (state.timeLeft <= 0) switchMode();
+        if (state.timeLeft === 10) beep(600);
+
+        updateDisplay();
+    }, 1000);
+}
+
+function resetTimer() {
+    clearInterval(interval);
+    state.isRunning = false;
+    state.mode = "focus";
+    state.timeLeft = focusInput.value * 60;
+    document.body.classList.remove("break");
+    updateDisplay();
+}
+
+function switchMode() {
+    if (state.mode === "focus") {
+        state.mode = "break";
+        state.timeLeft = breakInput.value * 60;
+        document.body.classList.add("break");
+        state.sessions++;
+
+        if (state.sessions >= 2) state.currentToy = "bubbles";
+    } else {
+        state.mode = "focus";
+        state.timeLeft = focusInput.value * 60;
+        document.body.classList.remove("break");
+        state.currentToy = "squishy";
+    }
+}
+
+let audioCtx;
+function beep(freq) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let o = audioCtx.createOscillator();
+    let g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = freq;
+    g.gain.value = 0.1;
+    o.start(); o.stop(audioCtx.currentTime + 0.2);
+}
+
+/* CANVAS */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* TOYS */
+let bubbles = [];
+let sand = [];
+let waveOffset = 0;
+let squishy = { x: 300, y: 300, size: 60, target: 60 };
+
+const toys = {
+
+    bubbles: {
+        update() {
+            bubbles.forEach(b => b.y -= b.speed);
+            bubbles = bubbles.filter(b => b.y > -50);
+        },
+        draw() {
+            bubbles.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+        },
+        click(e) {
+            bubbles.push({
+                x: e.clientX,
+                y: e.clientY,
+                size: Math.random() * 20 + 10,
+                speed: Math.random() + 0.5
+            });
+        }
+    },
+
+    sand: {
+        update() {
+            sand.forEach(p => p.y += 2);
+        },
+        draw() {
+            sand.forEach(p => ctx.fillRect(p.x, p.y, 2, 2));
+        },
+        click(e) {
+            for (let i = 0; i < 10; i++) {
+                sand.push({ x: e.clientX, y: e.clientY });
+            }
+        }
+    },
+
+    waves: {
+        update() { waveOffset += 0.05; },
+        draw() {
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                let y = canvas.height/2 + Math.sin(x*0.01 + waveOffset)*50;
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+    },
+
+    squishy: {
+        update() {
+            squishy.size += (squishy.target - squishy.size) * 0.1;
+        },
+        draw() {
+            ctx.beginPath();
+            ctx.arc(squishy.x, squishy.y, squishy.size, 0, Math.PI * 2);
+            ctx.fill();
+        },
+        click(e) {
+            squishy.x = e.clientX;
+            squishy.y = e.clientY;
+            squishy.target = 30;
+        },
+        release() {
+            squishy.target = 60;
+        }
+    }
+};
+
+/* INTERACTION */
+canvas.addEventListener("click", (e) => {
+    toys[state.currentToy]?.click?.(e);
+});
+
+canvas.addEventListener("mouseup", () => {
+    toys[state.currentToy]?.release?.();
+});
+
+/* LOOP */
+function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    toys[state.currentToy]?.update();
+    toys[state.currentToy]?.draw();
+
+    drawTimerVisual();
+
+    requestAnimationFrame(loop);
+}
+loop();
+
+/* TIMER VISUALS */
+function drawTimerVisual() {
+    let total = (state.mode === "focus" ? focusInput.value : breakInput.value) * 60;
+    let progress = state.timeLeft / total;
+
+    if (timerMode.value === "ring") {
+        ctx.beginPath();
+        ctx.arc(canvas.width-80, 80, 50, 0, Math.PI*2);
+        ctx.strokeStyle = "#333";
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(canvas.width-80, 80, 50, -Math.PI/2,
+            -Math.PI/2 + Math.PI*2*progress);
+        ctx.strokeStyle = "white";
+        ctx.stroke();
+    }
+
+    if (timerMode.value === "bar") {
+        ctx.fillStyle = "#333";
+        ctx.fillRect(50, canvas.height-50, canvas.width-100, 20);
+
+        ctx.fillStyle = "white";
+        ctx.fillRect(50, canvas.height-50, (canvas.width-100)*progress, 20);
+    }
+}
+
+/* UI */
+const timer = document.getElementById("timer");
+document.getElementById("start").onclick = startTimer;
+document.getElementById("reset").onclick = resetTimer;
+
+updateDisplay();

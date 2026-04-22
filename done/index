@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Toys</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #111;
+        color: white;
+        font-family: sans-serif;
+        overflow: hidden;
+    }
+
+    #ui {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        text-align: center;
+    }
+
+    #timer {
+        font-size: 90px;
+        margin: 10px 0;
+    }
+
+    input {
+        width: 50px;
+        text-align: center;
+        background: #222;
+        border: 1px solid #444;
+        color: white;
+    }
+
+    button, select {
+        margin: 5px;
+        padding: 6px 10px;
+        background: #222;
+        border: 1px solid #444;
+        color: white;
+        cursor: pointer;
+    }
+
+    canvas { display: block; }
+
+    body.break {
+        background: linear-gradient(135deg, #00f2fe, #4facfe);
+    }
+</style>
+</head>
+<body>
+
+<div id="ui">
+    Focus <input id="focusInput" value="25">
+    Break <input id="breakInput" value="5">
+
+    <br>
+
+    <select id="timerMode">
+        <option value="ring">Ring</option>
+        <option value="bar">Bar</option>
+    </select>
+
+    <br>
+
+    <button id="start">Start</button>
+    <button id="reset">Reset</button>
+
+    <div id="status">Focus</div>
+    <div id="timer">25:00</div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+</script>
+
+</body>
+</html>
