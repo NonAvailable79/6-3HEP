@@ -50,6 +50,11 @@
     body.break {
         background: linear-gradient(135deg, #00f2fe, #4facfe);
     }
+
+    #instructions {
+        float: bottom;
+        text-align: center;
+    }
 </style>
 </head>
 <body>
