@@ -21,6 +21,7 @@ const state = {
 const focusInput = document.getElementById("focusInput");
 const breakInput = document.getElementById("breakInput");
 const timerMode = document.getElementById("timerMode");
+const modeIndicator = document.getElementById("status");
 const startBtn = document.getElementById("start");
 const resetBtn = document.getElementById("reset");
 
@@ -49,7 +50,7 @@ function startTimer() {
     interval = setInterval(() => {
         state.timeLeft--;
 
-        if (state.timeLeft <= 1) switchMode();
+        if (state.timeLeft <= 0) switchMode();
 
         updateDisplay();
     }, 1000); // tick tick
@@ -59,10 +60,12 @@ function resetTimer() {
     clearInterval(interval);
     state.isRunning = false;
     state.mode = "focus";
-
     state.timeLeft = focusInput.value * 60;
+    state.currentToy = "squishy";
+
     document.body.classList.remove("break");
-    timerMode.innerHTML = "Focus";
+    modeIndicator.innerHTML = "Focus";
+    startBtn.innerHTML = "Start"
     updateDisplay();
 }
 
@@ -71,7 +74,7 @@ function switchMode() {
         state.mode = "break";
         state.timeLeft = breakInput.value * 60;
         document.body.classList.add("break");
-        timerMode.innerHTML = "Break";
+        modeIndicator.innerHTML = "Break";
         playSound(1) // high sound yay
         state.sessions++;
 
@@ -89,7 +92,7 @@ function switchMode() {
         state.mode = "focus";
         state.timeLeft = focusInput.value * 60;
         document.body.classList.remove("break");
-        timerMode.innerHTML = "Focus";
+        modeIndicator.innerHTML = "Focus";
         playSound(0) // low sound ahh
         state.currentToy = "squishy";
     }
@@ -125,11 +128,21 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-let mouse = { x: 0, y: 0 }; // track mouse
+let isHolding = false; // handle mouse existence
 
-canvas.addEventListener("mousemove", (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
+canvas.addEventListener("mousedown", () => {
+    isHolding = true;
+    if (state.currentToy === "squishy") {
+        squishy.target = 20;
+    }
+});
+
+canvas.addEventListener("mouseup", () => {
+    isHolding = false;
+});
+
+canvas.addEventListener("mouseleave", () => {
+    isHolding = false;
 });
 
 // Toys! (all functions in objects)
@@ -187,8 +200,22 @@ const toys = {
                 }
 
                 // check if touching floor rn
-                if (p.y > canvas.height) {
-                    p.y = canvas.height;
+                let atFloor = p.y + 2 >= canvas.height;
+
+                if (!below && !atFloor) {
+                    p.y += 2;
+                } else {
+                    let left = sand.find(s => s.x === p.x - 2 && s.y === p.y + 2);
+                    let right = sand.find(s => s.x === p.x + 2 && s.y === p.y + 2);
+
+                    if (!left && !atFloor) {
+                        p.x -= 2;
+                        p.y += 2;
+                    } else if (!right && !atFloor) {
+                        p.x += 2;
+                        p.y += 2;
+                    }
+
                 }
             }
         },
@@ -224,15 +251,17 @@ const toys = {
 
     squishy: {
         update() {
-            // smooth size change
+            // auto-expand when not holding
+            if (!isHolding) {
+                squishy.target = 60;
+            }
             squishy.size += (squishy.target - squishy.size) * 0.2;
 
-            // cursor pull (only in focus mode)
+            // cursor pull
             if (state.mode === "focus") {
                 let dx = mouse.x - squishy.x;
                 let dy = mouse.y - squishy.y;
 
-                // distance-based pull strength
                 squishy.x += dx * 0.05;
                 squishy.y += dy * 0.05;
             }
