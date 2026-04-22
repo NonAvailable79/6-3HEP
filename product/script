@@ -1,3 +1,15 @@
+/*
+Welcome! Ur about to enter smth almst 300 lines...
+C0nTents
+===========
+1. State
+2. ID Variables
+3. Timer Updating (update, start timer, reset timer, switch mode)
+4. Sound System
+5. Canvas context
+6. Toy Functions
+7. Interaction, Display, UI
+*/
 const state = {
     mode: "focus",
     isRunning: false,
@@ -14,7 +26,8 @@ const resetBtn = document.getElementById("reset");
 
 let interval;
 
-function updateDisplay() {
+// Timer Stuff! (All Functions)
+function updateDisplay() { // display time in min/sec
     let m = Math.floor(state.timeLeft / 60);
     let s = state.timeLeft % 60;
     timer.textContent =
@@ -22,15 +35,15 @@ function updateDisplay() {
         s.toString().padStart(2, "0");
 }
 
-function startTimer() {
+function startTimer() { 
     if (state.isRunning) {
         clearInterval(interval);
         state.isRunning = false;
         startBtn.innerHTML = "Start"
         return;
     }
-
-    state.isRunning    = true;
+    // toggle
+    state.isRunning = true;
     startBtn.innerHTML = "Pause"
 
     interval = setInterval(() => {
@@ -39,7 +52,7 @@ function startTimer() {
         if (state.timeLeft <= 1) switchMode();
 
         updateDisplay();
-    }, 1000);
+    }, 1000); // tick tick
 }
 
 function resetTimer() {
@@ -59,7 +72,7 @@ function switchMode() {
         state.timeLeft = breakInput.value * 60;
         document.body.classList.add("break");
         timerMode.innerHTML = "Break";
-        playSound(1)
+        playSound(1) // high sound yay
         state.sessions++;
 
         if (state.sessions >= 5) {
@@ -70,18 +83,19 @@ function switchMode() {
         }
         else {
             state.currentToy = "waves"
-        }
+        } // decide which toy
     }
     else {
         state.mode = "focus";
         state.timeLeft = focusInput.value * 60;
         document.body.classList.remove("break");
         timerMode.innerHTML = "Focus";
-        playSound(0)
+        playSound(0) // low sound ahh
         state.currentToy = "squishy";
     }
 }
 
+// Audio Stuff! (Also all functions)
 let audioCtx;
 
 function playSound(high) {
@@ -89,19 +103,19 @@ function playSound(high) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(audioCtx.destination); // spawn audio context
     
     osc.type = high ? 'triangle' : 'sine';
     osc.frequency.setValueAtTime(high ? 880 : 440, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-    
+    // form sound
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
+    osc.stop(audioCtx.currentTime + 0.5); // play sound
 }
 
-/* CANVAS */
-const canvas = document.getElementById("canvas");
+// Canvas Stuff! (real work)
+const canvas = document.getElementById("canvas"); // make the canvas drawable
 const ctx = canvas.getContext("2d");
 
 function resize() {
@@ -111,31 +125,31 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-let mouse = { x: 0, y: 0 };
+let mouse = { x: 0, y: 0 }; // track mouse
 
 canvas.addEventListener("mousemove", (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
 });
 
-/* TOYS */
+// Toys! (all functions in objects)
 let bubbles = [];
 let sand = [];
 let waveOffset = 0;
 let squishy = { x: 300, y: 300, size: 120, target: 60 };
 
+// An object can contain functions; they need not be associative pairs
 const toys = {
-
     bubbles: {
         update() {
             bubbles.forEach(b => b.y -= b.speed);
-            bubbles = bubbles.filter(b => b.y > -50);
+            bubbles = bubbles.filter(b => b.y > -50); // go up
         },
         draw() {
             bubbles.forEach(b => {
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
-                ctx.stroke();
+                ctx.stroke(); // draw a circle everywhwere there's a bubble
             });
         },
         click(e) {
@@ -144,30 +158,64 @@ const toys = {
                 y: e.clientY,
                 size: Math.random() * 20 + 10,
                 speed: Math.random() + 0.5
-            });
+            }); // make new bubble
         }
     },
 
     sand: {
         update() {
-            sand.forEach(p => p.y += 2);
+            for (let i = sand.length - 1; i >= 0; i--) {
+                let p = sand[i];
+
+                // try move down
+                let below = sand.find(s => s.x === p.x && s.y === p.y + 2);
+
+                if (!below) {
+                    p.y += 2;
+                } else {
+                    // try slide left/right
+                    let left = sand.find(s => s.x === p.x - 2 && s.y === p.y + 2);
+                    let right = sand.find(s => s.x === p.x + 2 && s.y === p.y + 2);
+
+                    if (!left) {
+                        p.x -= 2;
+                        p.y += 2;
+                    } else if (!right) {
+                        p.x += 2;
+                        p.y += 2;
+                    }
+                }
+
+                // check if touching floor rn
+                if (p.y > canvas.height) {
+                    p.y = canvas.height;
+                }
+            }
         },
+
         draw() {
-            sand.forEach(p => ctx.fillRect(p.x, p.y, 2, 2));
+            ctx.fillStyle = "tan"; // speck each grain
+            sand.forEach(p => {
+                ctx.fillRect(p.x, p.y, 2, 2);
+            });
         },
+
         click(e) {
-            for (let i = 0; i < 10; i++) {
-                sand.push({ x: e.clientX, y: e.clientY });
+            for (let i = 0; i < 20; i++) {
+                sand.push({ // make new grain
+                    x: Math.floor(e.clientX / 2) * 2,
+                    y: Math.floor(e.clientY / 2) * 2
+                });
             }
         }
     },
 
     waves: {
-        update() { waveOffset += 0.05; },
+        update() { waveOffset += 0.05; }, // change sin
         draw() {
             ctx.beginPath();
             for (let x = 0; x < canvas.width; x++) {
-                let y = canvas.height/2 + Math.sin(x*0.01 + waveOffset)*50;
+                let y = canvas.height/2 + Math.sin(x*0.01 + waveOffset)*50; // draw sine wave
                 ctx.lineTo(x, y);
             }
             ctx.stroke();
@@ -191,14 +239,14 @@ const toys = {
         },
         draw() {
             ctx.beginPath();
-            ctx.arc(squishy.x, squishy.y, squishy.size, 0, Math.PI * 2);
+            ctx.arc(squishy.x, squishy.y, squishy.size, 0, Math.PI * 2); // draw circle
             ctx.fillStyle = "#aaa";
-            ctx.fill();
+            ctx.fill(); // fill circle
         },
         click(e) {
             squishy.x = e.clientX;
             squishy.y = e.clientY;
-            squishy.target = 30;
+            squishy.target = 30; // go
         },
         release() {
             squishy.target = 60;
@@ -206,7 +254,7 @@ const toys = {
     }
 };
 
-/* INTERACTION */
+// Stuff that actually Happens and Responds
 canvas.addEventListener("click", (e) => {
     toys[state.currentToy]?.click?.(e);
 });
@@ -215,8 +263,7 @@ canvas.addEventListener("mouseup", () => {
     toys[state.currentToy]?.release?.();
 });
 
-/* LOOP */
-function loop() {
+function loop() { // Check wassup
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     toys[state.currentToy]?.update();
@@ -225,10 +272,10 @@ function loop() {
     drawTimerVisual();
 
     requestAnimationFrame(loop);
-}
+}// Updates timer and toys
 loop();
 
-/* TIMER VISUALS */
+// timer eye
 function drawTimerVisual() {
     let total = (state.mode === "focus" ? focusInput.value : breakInput.value) * 60;
     let progress = state.timeLeft / total;
@@ -237,27 +284,27 @@ function drawTimerVisual() {
         ctx.beginPath();
         ctx.arc(canvas.width-80, 80, 50, 0, Math.PI*2);
         ctx.strokeStyle = "#333";
-        ctx.stroke();
+        ctx.stroke(); // draw circle
 
         ctx.beginPath();
         ctx.arc(canvas.width-80, 80, 50, -Math.PI/2,
-            -Math.PI/2 + Math.PI*2*progress);
+            -Math.PI/2 + Math.PI*2*progress); // draw not done part
         ctx.strokeStyle = "white";
         ctx.stroke();
     }
 
     if (timerMode.value === "bar") {
         ctx.fillStyle = "#333";
-        ctx.fillRect(50, canvas.height-50, canvas.width-100, 20);
+        ctx.fillRect(50, canvas.height-50, canvas.width-100, 20); // make full bar
 
         ctx.fillStyle = "white";
-        ctx.fillRect(50, canvas.height-50, (canvas.width-100)*progress, 20);
+        ctx.fillRect(50, canvas.height-50, (canvas.width-100)*progress, 20); // fill bar
     }
 }
 
-/* UI */
 const timer = document.getElementById("timer");
 document.getElementById("start").onclick = startTimer;
 document.getElementById("reset").onclick = resetTimer;
-
+// make sure buttons do what they should
 updateDisplay();
+// Alr, we passed 300! ;)
