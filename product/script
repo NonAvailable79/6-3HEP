@@ -130,6 +130,11 @@ resize();
 
 let isHolding = false; // handle mouse existence
 
+canvas.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
 canvas.addEventListener("mousedown", () => {
     isHolding = true;
     if (state.currentToy === "squishy") {
