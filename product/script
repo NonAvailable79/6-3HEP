@@ -227,9 +227,9 @@ const toys = {
         },
 
         draw() {
-            ctx.fillStyle = "tan"; // speck each grain
+            ctx.fillStyle = "brown"; // speck each grain
             sand.forEach(p => {
-                ctx.fillRect(p.x, p.y, 2, 2);
+                ctx.fillRect(p.x, p.y, 4, 4);
             });
         },
 
